@@ -25,6 +25,10 @@ export class ResponseHandler<T = any> extends IStatusesResponse{
         return new ResponseHandler({code: this.code ? this.code : StatusCode.Internal, success: false, message: this.message ? this.message : "Internal server error" })
     }
 
+    public returnUnauthorized = () => {
+        return new ResponseHandler({code: this.code ? this.code : StatusCode.Unauthorized, success: false, message: this.message ? this.message : "Unauthorized!" })
+    }
+
 }
 
 type inputResponse<T> = {

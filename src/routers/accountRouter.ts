@@ -25,8 +25,10 @@ const router = Router();
  *              properties:
  *                  username:
  *                      type: string
+ *                      default: "manager"
  *                  password :
  *                      type: string
+ *                      default: "!Manager123"
  */
 
 /**

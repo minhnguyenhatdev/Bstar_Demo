@@ -1,3 +1,4 @@
+import * as jwt from 'jsonwebtoken';
 import { CreateProductAtStorageRequest } from './../types/CreateProductAtStorageRequest';
 import { Product } from './../entities/product';
 import { IRequest } from './../types/IRequest';
@@ -11,7 +12,9 @@ import { StockLog, Type } from '../entities/stockLog';
 const updateStockAtStorage = async(req: IRequest<UpdateProductAtStorageRequest>, res: IResponse<ResponseHandler<IStatusesResponse>>): Promise<IResponse<ResponseHandler<IStatusesResponse>>> => {
     try {
         const findProduct = await Product.findOneBy({id: req.body.productId})
-        
+        const access_token = req.headers.access_token as string;
+        const data = await <jwt.UserPayLoad>jwt.verify(access_token, process.env.JWT_SECRET_TOKEN as string)
+
         if(!findProduct) {
             return res.json(new ResponseHandler({message: "No product found by id!"}).returnError())
         }
@@ -24,7 +27,7 @@ const updateStockAtStorage = async(req: IRequest<UpdateProductAtStorageRequest>,
         
         const newImportLog = StockLog.create({
             productId: findProduct.id,
-            userId: req.userId,
+            userId: data.id,
             previousQuantity,
             newQuantity: result,
             type: (findProduct.quantity > req.body.storagePlacement.quantity) ? Type.Export : Type.Import
