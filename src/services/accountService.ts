@@ -5,7 +5,7 @@ import argon2 from 'argon2';
 
 export const registerSystemAccount = async (body : any) => {
     const createUser = await User.create({
-        name: body.name,
+        name: String(body.name).toLowerCase(),
         role: Role.USER,
         email: body.email,
         phone: body.phone,
@@ -41,6 +41,44 @@ export const checkUsernameSystemAccount = async (username: string) => {
     })
 
     if (!account){
+        return false
+    }
+
+    return true
+}
+
+export const getTypeUser = async (id: number) => {
+    const user = await User.findOne({
+        select:{
+            id: true,
+            type: true,
+        },
+        where: {
+            id: id
+        }
+    })
+
+    return user?.type
+}
+
+export const checkPasswordSystem = async (userId: number, password: string) => {
+    const user = await SystemAccount.findOne({
+        select:{
+            id: true,
+            password: true
+        },
+        where: {
+            userId: userId
+        }
+    })
+
+    if(!user){
+        return false
+    }
+
+    const verify = await argon2.verify(user.password, password)
+
+    if(!verify){
         return false
     }
 

@@ -17,7 +17,7 @@ const router = Router();
  * @swagger
  * /api/google/getToken:
  *  get:
- *      summary: 'getToken Account With Social'
+ *      summary: 'getToken Account With Social [PUBLIC]'
  *      tags: [GOOGLE]
  *      responses:
  *          '200':
@@ -40,7 +40,7 @@ const router = Router();
  * @swagger
  * /api/google/login:
  *  post:
- *      summary: 'Login Account With System Account'
+ *      summary: 'Login Account With System Account [PUBLIC]'
  *      tags: [GOOGLE]
  *      requestBody:
  *          content:

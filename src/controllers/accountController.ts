@@ -1,13 +1,17 @@
+import { checkPasswordSystem } from '../services/accountService';
+import { SystemAccount } from './../entities/systemAccount';
 import { IStatusesResponse } from '../types/IStatusesResponse';
-import { Type, User } from '../entities/user';
+import { Type, User, Role } from '../entities/user';
 import { LoginResponse } from '../types/loginResponse';
-import { checkUsernameSystemAccount, loginSystemAccount, registerSystemAccount } from '../services/accountService';
+import { checkUsernameSystemAccount, getTypeUser, loginSystemAccount, registerSystemAccount } from '../services/accountService';
+import { UserResponse } from '../types/userResponse';
 import { IResponse } from "../types/IResponse"
 import { Request } from 'express'
 import { ResponseHandler } from '../types/ResponseHandler';
 import emailValidator from "email-validator";
 import passwordValidator from 'password-validator';
 import jwt from "jsonwebtoken";
+import argon2 from 'argon2';
 const phoneValidator = require("vn-phone-validator");
 const usernameRegex = /^[a-zA-Z0-9]+$/;
 var schemaPasword = new passwordValidator()
@@ -100,7 +104,7 @@ const login = async(_req: Request, _res: IResponse<LoginResponse>) =>{
             return _res.json(new ResponseHandler({message: "Username not vaild!"}).returnError())
         }
 
-        const loginSystem = await loginSystemAccount(username, password)
+        const loginSystem = await loginSystemAccount(username.toLowerCase(), password)
         if (!loginSystem){
             return _res.json(new ResponseHandler({message: "Incorrect username or password!"}).returnError())
         }
@@ -128,8 +132,118 @@ const info = async(_req: Request, _res: IResponse<IStatusesResponse>) =>{
     }
 }
 
+const updateOrtherUser = async(_req: Request, _res: IResponse<UserResponse>) =>{
+    try {
+        const name: string = _req.body.name
+        const email: string = _req.body.email
+        const phone: string = _req.body.phone
+        const role: string = _req.body.role
+        const password: string | undefined = _req.body.password
+        const id: number = +_req.params.id
+
+        //check if id input is invalid (not a number) or null
+        if(isNaN(id) || !id) {
+            return _res.json(new ResponseHandler({message: "Wrong request format"}).returnError())
+        }
+
+        if (!name || name == ""){
+            return _res.json(new ResponseHandler({message: "variable name not exist or empty!"}).returnError())
+        }
+
+        if (!email || email == ""){
+            return _res.json(new ResponseHandler({message: "variable email not exist or empty!"}).returnError())
+        }
+
+        if (!phone || phone == ""){
+            return _res.json(new ResponseHandler({message: "variable phone not exist or empty!"}).returnError())
+        }
+
+        if (!role || role == ""){
+            return _res.json(new ResponseHandler({message: "variable role not exist or empty!"}).returnError())
+        }
+
+        if(!emailValidator.validate(email)){
+            return _res.json(new ResponseHandler({message: "Wrong email format!"}).returnError())
+        }
+
+        if(!phoneValidator(phone).validate()){
+            return _res.json(new ResponseHandler({message: "Wrong phone format!"}).returnError())
+        }
+
+        if(!Object.values(Role).includes(role as Role)){
+            return _res.json(new ResponseHandler({message: "Wrong role format!"}).returnError())
+        }
+
+        await User.update({id: id}, {
+            name: name,
+            email: email,
+            role: role as Role,
+            phone: phone
+        })
+        
+        if(password && password != ""){
+            if(await getTypeUser(id) == Type.SYSTEM){
+                const passwordHash = await argon2.hash(password);
+                await SystemAccount.update({userId: id},{
+                    password: passwordHash
+                })
+            }
+        }
+
+        return _res.json(new ResponseHandler({message: "Update Infomation Successfully!"}).returnSuccess())
+    } catch (error) {
+        return _res.json(new ResponseHandler({message: "Internal server error!"}).returnInternal())
+    }
+}
+
+const changePassword = async(_req: Request, _res: IResponse<UserResponse>) =>{
+    try {
+        const oldPassword = _req.body.oldpassword
+        const password = _req.body.password
+        const rePassword = _req.body.repassword
+        const access_token = _req.headers.access_token as string;
+        const data = await <jwt.UserPayLoad>jwt.verify(access_token, process.env.JWT_SECRET_TOKEN as string)
+
+        if(!await checkPasswordSystem(data.id, oldPassword)){
+            return _res.json(new ResponseHandler({message: "Old Password incorrect"}).returnError())
+        }
+
+        if(await getTypeUser(data.id) !== Type.SYSTEM){
+            return _res.json(new ResponseHandler({message: "Social Account Can't Change Password"}).returnError())
+        }
+
+        if (!password || password == ""){
+            return _res.json(new ResponseHandler({message: "variable password not exist or empty!"}).returnError())
+        }
+
+        if (!rePassword || rePassword == ""){
+            return _res.json(new ResponseHandler({message: "variable password not exist or empty!"}).returnError())
+        }
+
+        if(!schemaPasword.validate(password)){
+            return _res.json(new ResponseHandler({message: "Wrong password format. Password includes uppercase, lowercase letters, numbers and special characters. Least 8 character!"}).returnError())
+        }
+
+        if(password !== rePassword){
+            return _res.json(new ResponseHandler({message: "Password not incorrect"}).returnError())
+        }
+
+        const passwordHash = await argon2.hash(password);
+
+        await SystemAccount.update({userId: data.id},{
+            password: passwordHash
+        })
+
+        return _res.json(new ResponseHandler({message: "Change Password Successfully!"}).returnSuccess())
+    } catch (error) {
+        return _res.json(new ResponseHandler({message: "Internal server error!"}).returnInternal())
+    }
+}
+
 export const accountController = {
     register,
     login,
     info,
+    updateOrtherUser,
+    changePassword
 }
