@@ -8,7 +8,7 @@ export const options = {
         },
         servers: [
             {
-                url: `http://10.0.106.27:${process.env.PORT}`,
+                url: `http://10.0.106.26:${process.env.PORT}`,
             }
         ],
         components: {

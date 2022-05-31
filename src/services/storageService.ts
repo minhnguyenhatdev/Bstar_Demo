@@ -1,4 +1,4 @@
-import { StockLog } from '../entities/stockLog';
+// import { StockLog } from '../entities/stockLog';
 import { CreateProductAtStorageRequest } from 'src/types/CreateProductAtStorageRequest';
 import { StoragePlacement } from '../entities/storagePlacement';
 import { Product } from './../entities/product';

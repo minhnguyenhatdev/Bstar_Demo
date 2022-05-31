@@ -32,7 +32,7 @@ export class Product extends BaseEntity{
     price!: number
 
     @Column('boolean', {default: true})
-    isAvaiable: boolean
+    isAvailable: boolean
 
     @Column({nullable: true})
     quantity: number

@@ -1,10 +1,8 @@
 enum Sort {
-    Category = "Category",
-    Name = "Name",
-    Price = "Price"
+    Name = "Name"
 }
 
-export class ProductQueryRequest {
+export class UserQueryRequest {
     pageIndex: number
     pageLimit: number
     sortBy?: Sort

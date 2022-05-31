@@ -18,7 +18,7 @@ export enum Type {
 
 
 export enum Status {
-    Avaiable = "Avaiable",
+    Avaiable = "Available",
     Spending = "Spending",
     Disabled = "Disabled"
 }

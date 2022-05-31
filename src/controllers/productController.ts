@@ -85,7 +85,7 @@ const updateProduct = async(req : IRequest<Product>, res: IResponse<ResponseHand
         //found product and update
         await Product.update({id}, {...req.body})
 
-        return res.json(new ResponseHandler({message: "Created product successfully!"}).returnSuccess())
+        return res.json(new ResponseHandler({message: "Updated product successfully!"}).returnSuccess())
     } catch (error) {
         console.log(error)
         return res.json(new ResponseHandler({}).returnInternal())
@@ -139,6 +139,7 @@ const queryProduct = async(req : Request, res: IResponse<ResponseHandler<Product
 
         //get pageTotal from req.query passed from middleware
         const pageTotal: number = req.query.pageTotal ? +req.query.pageTotal : 1
+        const searchInput: string = req.query.searchInput ? req.query.searchInput as string : ''
 
         //check if current pageIndex lower than pageTotal
         if(pageIndex > pageTotal) {
@@ -146,10 +147,12 @@ const queryProduct = async(req : Request, res: IResponse<ResponseHandler<Product
         }
 
         //query product
-        const products = (sortBy ? await queryProductService(pageIndex, pageLimit, sortBy, sortOrder) : await queryProductService(pageIndex, pageLimit))
+        const products = (sortBy ? await queryProductService(pageIndex, pageLimit, sortBy, sortOrder, searchInput) : await queryProductService(pageIndex, pageLimit))
         if(!products) {
             return res.json(new ResponseHandler({message: "Invalid query!"}).returnError())
         }
+
+        
 
         //define result from queried product list to ProductsQueryResponse object type
         const result = new ProductsQueryResponse(products, pageIndex, pageLimit, pageTotal)

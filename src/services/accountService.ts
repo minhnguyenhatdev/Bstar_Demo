@@ -2,14 +2,15 @@ import { SocialAccount } from './../entities/socialAccount';
 import { SystemAccount } from './../entities/systemAccount';
 import { User, Role, Status, Type } from './../entities/user';
 import argon2 from 'argon2';
+import { Like } from 'typeorm';
 
 export const registerSystemAccount = async (body : any) => {
     const createUser = await User.create({
-        name: String(body.name).toLowerCase(),
+        name: body.name,
         role: Role.USER,
         email: body.email,
         phone: body.phone,
-        status: Status.Avaiable
+        status: Status.Spending
     }).save();
 
     if (!createUser){
@@ -18,7 +19,34 @@ export const registerSystemAccount = async (body : any) => {
 
     const passwordHash = await argon2.hash(body.password);
     const createSysAccount = await SystemAccount.create({
-        username: body.username,
+        username: String(body.username).toLowerCase(),
+        password: passwordHash,
+        userId: createUser.id
+    }).save();
+
+    if (!createSysAccount){
+        return false
+    }
+
+    return createUser;
+}
+
+export const addSystemAccount = async (body : any) => {
+    const createUser = await User.create({
+        name: String(body.name).toLowerCase(),
+        role: body.role,
+        email: body.email,
+        phone: body.phone,
+        status: body.status
+    }).save();
+
+    if (!createUser){
+        return false
+    }
+
+    const passwordHash = await argon2.hash(body.password);
+    const createSysAccount = await SystemAccount.create({
+        username: String(body.username).toLowerCase(),
         password: passwordHash,
         userId: createUser.id
     }).save();
@@ -95,7 +123,10 @@ export const loginSystemAccount = async (username: string, password: string) => 
             user: true
         },
         where: {
-            username: username
+            username: username,
+            user: {
+                status: Status.Avaiable
+            }
         }
     })
     if (!account){
@@ -117,7 +148,10 @@ export const loginSocialAccount = async (data: any) => {
             user: true
         },
         where: {
-            username: data.id
+            username: data.id,
+            user: {
+                status: Status.Avaiable
+            }
         }
     })
     if (account){
@@ -154,4 +188,49 @@ export const loginSocialAccount = async (data: any) => {
             id: createSysAccount.id
         }
     })
+}
+
+//paginating product list
+//input: page number & limit product per page 
+//optional: sort by Category | Name | Price
+export const queryUserService = async (pageIndex: number, pageLimit: number, sortBy?: String, sortOrder?: String, searchInput?: String): Promise<User[]> => {
+    try {
+        //create number of product to skip on db based on pageIndex and pageLimit
+        const skipNumber = (pageIndex-1)*pageLimit
+
+        let users: User[]
+
+        switch(sortBy) {
+            case "Name": {
+                users = await User.find({
+                    order: {
+                        name: sortOrder === "ascending" ? "ASC": "DESC"
+                    },
+                    take: pageLimit,
+                    skip: skipNumber,
+                    where:{
+                        name: Like(`%${searchInput}%`) 
+                    }
+                })
+                break;
+            }
+            //default is sort by date
+            default: {
+                users = await User.find({
+                    order: {
+                        id: sortOrder === "ascending" ? "ASC": "DESC"
+                    },
+                    take: pageLimit,
+                    skip: skipNumber,
+                    where:{
+                        name: Like(`%${searchInput}%`) 
+                    }
+                })
+            }
+        }  
+        return users
+    } catch (error) {
+        console.log(error)
+        return []
+    }
 }

@@ -1,4 +1,4 @@
-import { verifyManager } from './../middlewares/authorization';
+import { verifyAll } from './../middlewares/authorization';
 import { productController } from '../controllers/productController';
 import {Router} from 'express';
 import { validateInputForProductQuery, validateProductFormat } from '../middlewares/checkTypeOfRequestBody';
@@ -28,6 +28,30 @@ const router = Router();
  *                  description:
  *                      type: string
  *                      default: "This is a horror book"
+ *          updateProduct:
+ *              type: object
+ *              properties:
+ *                  name:
+ *                      type: string
+ *                  categoryId:
+ *                      type: number
+ *                      default: 1
+ *                  image:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                  price:
+ *                      type: number
+ *                      default: 100
+ *                  author:
+ *                      type: string
+ *                      default: "Steven King"
+ *                  description:
+ *                      type: string
+ *                      default: "This is a horror book"
+ *                  isAvailable:
+ *                      type: boolean
+ *                      default: true
  */
 
 /**
@@ -88,7 +112,7 @@ router.get("/:id*", productController.findOneProduct)
  *                      scheme:
  *                          type: array
  */
-router.post("/", verifyManager, validateProductFormat, productController.addProduct)
+router.post("/", verifyAll, validateProductFormat, productController.addProduct)
 
 /**
  * @swagger
@@ -107,7 +131,7 @@ router.post("/", verifyManager, validateProductFormat, productController.addProd
  *          content:
  *              application/json:
  *                  schema:
- *                      $ref: '#components/schema/product'
+ *                      $ref: '#components/schema/updateProduct'
  *      responses:
  *          '202':
  *              content:
@@ -115,7 +139,7 @@ router.post("/", verifyManager, validateProductFormat, productController.addProd
  *                      scheme:
  *                          type: array
  */
-router.put("/:id", verifyManager, validateProductFormat, productController.updateProduct)
+router.put("/:id", verifyAll, validateProductFormat, productController.updateProduct)
 
 
  /**
@@ -138,7 +162,7 @@ router.put("/:id", verifyManager, validateProductFormat, productController.updat
  *                      scheme:
  *                          type: object
  */
-router.delete("/:id", verifyManager, productController.deleteProduct)
+router.delete("/:id", verifyAll, productController.deleteProduct)
 
   /**
  * @swagger
@@ -169,6 +193,12 @@ router.delete("/:id", verifyManager, productController.deleteProduct)
  *        description: Sort Order
  *        type: string
  *        default: "descending"
+ *      - in: query
+ *        name: searchInput
+ *        required: false
+ *        description: Search Input
+ *        type: string
+ *        default: ""
  *      responses:
  *          '202':
  *              content:
